@@ -1,0 +1,2 @@
+- Scaffolded by assistant: Next.js + Tailwind + Prisma starter for UrbanClap clone
+- Files created under /tmp/urbanclap-clone

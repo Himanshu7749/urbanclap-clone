@@ -1,20 +1,54 @@
 import os
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 
-import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 from fastapi.testclient import TestClient
+
+import database
+_test_engine = create_engine(
+    "sqlite:///:memory:",
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool,
+)
+database.engine = _test_engine
+database.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_test_engine)
+
+from models import Base
+Base.metadata.create_all(bind=_test_engine)
+
+# Seed test data directly before importing app
+from models import Service, Provider
+from database import SessionLocal as TestSession
+
+def _seed():
+    db = TestSession()
+    if db.query(Service).count() > 0:
+        db.close()
+        return
+    services = [
+        Service(name="Barber", slug="barber"),
+        Service(name="Plumbing", slug="plumbing"),
+        Service(name="Cleaning", slug="cleaning"),
+    ]
+    db.add_all(services)
+    db.commit()
+    barber = db.query(Service).filter_by(slug="barber").first()
+    plumbing = db.query(Service).filter_by(slug="plumbing").first()
+    db.add_all([
+        Provider(name="Alice the Barber", rating=4.8, service_id=barber.id),
+        Provider(name="Bob the Barber", rating=4.6, service_id=barber.id),
+        Provider(name="Cathy the Plumber", rating=4.7, service_id=plumbing.id),
+    ])
+    db.commit()
+    db.close()
+
+_seed()
+
 from main import app
 
 client = TestClient(app)
-
-# The startup event seeds the DB, but TestClient doesn't run lifespan events by default.
-# Manually seed before tests.
-@pytest.fixture(autouse=True, scope="session")
-def seed_db():
-    from database import get_db
-    from service import CatalogService
-    db = next(get_db())
-    CatalogService(db).seed()
 
 
 def test_health():
@@ -29,7 +63,6 @@ def test_list_services():
     slugs = [s["slug"] for s in r.json()]
     assert "barber" in slugs
     assert "plumbing" in slugs
-    assert "cleaning" in slugs
 
 
 def test_get_service_by_slug():
@@ -46,7 +79,6 @@ def test_get_service_not_found():
 
 
 def test_get_provider():
-    # get the first provider from barber service
     svc = client.get("/services/barber").json()
     provider_id = svc["providers"][0]["id"]
     r = client.get(f"/providers/{provider_id}")

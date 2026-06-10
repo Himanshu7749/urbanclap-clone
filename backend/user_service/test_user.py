@@ -1,8 +1,24 @@
 import os
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 
-import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 from fastapi.testclient import TestClient
+
+# Override engine before app imports anything else
+import database
+_test_engine = create_engine(
+    "sqlite:///:memory:",
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool,
+)
+database.engine = _test_engine
+database.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_test_engine)
+
+from models import Base
+Base.metadata.create_all(bind=_test_engine)
+
 from main import app
 
 client = TestClient(app)
@@ -16,9 +32,7 @@ def test_health():
 
 def test_register():
     r = client.post("/auth/register", json={
-        "name": "Alice",
-        "email": "alice@test.com",
-        "password": "secret123",
+        "name": "Alice", "email": "alice@test.com", "password": "secret123",
     })
     assert r.status_code == 201
     body = r.json()

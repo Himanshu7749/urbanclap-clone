@@ -7,11 +7,17 @@ app = FastAPI(title="API Gateway", version="2.0.0")
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 
+_origins = [FRONTEND_URL, "http://localhost:3000"]
+_extra = os.getenv("EXTRA_CORS_ORIGINS", "")
+if _extra:
+    _origins += [o.strip() for o in _extra.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONTEND_URL],
+    allow_origins=_origins,
     allow_methods=["*"],
     allow_headers=["*"],
+    allow_credentials=True,
 )
 
 USER_SERVICE         = os.getenv("USER_SERVICE_URL",         "http://localhost:8001")

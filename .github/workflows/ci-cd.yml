@@ -109,31 +109,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # ── Deploy backend services to Render ──────────────────────────────────
-      - name: Deploy User Service → Render
+      # ── Deploy backend services to Render via API ─────────────────────────
+      - name: Deploy all backend services → Render
         run: |
-          curl -s -X POST "${{ secrets.RENDER_DEPLOY_USER_SERVICE }}" \
-            -H "Accept: application/json" | jq .
-
-      - name: Deploy Catalog Service → Render
-        run: |
-          curl -s -X POST "${{ secrets.RENDER_DEPLOY_CATALOG_SERVICE }}" \
-            -H "Accept: application/json" | jq .
-
-      - name: Deploy Booking Service → Render
-        run: |
-          curl -s -X POST "${{ secrets.RENDER_DEPLOY_BOOKING_SERVICE }}" \
-            -H "Accept: application/json" | jq .
-
-      - name: Deploy Notification Service → Render
-        run: |
-          curl -s -X POST "${{ secrets.RENDER_DEPLOY_NOTIFICATION_SERVICE }}" \
-            -H "Accept: application/json" | jq .
-
-      - name: Deploy Gateway → Render
-        run: |
-          curl -s -X POST "${{ secrets.RENDER_DEPLOY_GATEWAY }}" \
-            -H "Accept: application/json" | jq .
+          for SERVICE_ID in srv-d8kr8sf7f7vs7395k3lg srv-d8kr8sf7f7vs7395k3l0 srv-d8krcpv7f7vs7395mvl0 srv-d8kr8sf7f7vs7395k3m0 srv-d8krfn77f7vs7395oojg; do
+            curl -s -X POST "https://api.render.com/v1/services/$SERVICE_ID/deploys" \
+              -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+              -H "Content-Type: application/json" \
+              -d '{"clearCache": "do_not_clear"}' | jq .id
+          done
 
       # ── Deploy frontend to Vercel ──────────────────────────────────────────
       - uses: actions/setup-node@v4

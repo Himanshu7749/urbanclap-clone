@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import prisma from '../../lib/prisma'
+
+const PYTHON_API = process.env.PYTHON_API_URL || 'http://localhost:8000'
 
 function StarRating({ rating }) {
   const stars = Math.round(rating ?? 0)
@@ -18,7 +19,6 @@ function StarRating({ rating }) {
 export default function ServicePage({ service, providers }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
-      {/* Navbar */}
       <nav className="sticky top-0 z-50 border-b border-white/60 bg-white/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-2">
@@ -70,19 +70,17 @@ export default function ServicePage({ service, providers }) {
 }
 
 export async function getServerSideProps({ params }) {
-  const service = await prisma.service.findUnique({
-    where: { slug: params.slug },
-    include: {
-      providers: { select: { id: true, name: true, rating: true } },
-    },
-  })
-
-  if (!service) return { notFound: true }
-
-  return {
-    props: {
-      service: { id: service.id, name: service.name, slug: service.slug },
-      providers: service.providers,
-    },
+  try {
+    const res = await fetch(`${PYTHON_API}/api/services/${params.slug}`)
+    if (!res.ok) return { notFound: true }
+    const data = await res.json()
+    return {
+      props: {
+        service: { id: data.id, name: data.name, slug: data.slug },
+        providers: data.providers,
+      },
+    }
+  } catch {
+    return { notFound: true }
   }
 }

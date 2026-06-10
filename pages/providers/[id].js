@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
-import prisma from '../../lib/prisma'
+
+const PYTHON_API = process.env.PYTHON_API_URL || 'http://localhost:8000'
 
 function StarRating({ rating }) {
   const stars = Math.round(rating ?? 0)
@@ -41,14 +42,14 @@ export default function ProviderProfile({ provider }) {
     setError(null)
     setStatus(null)
 
-    const res = await fetch('/api/bookings', {
+    const res = await fetch(`${PYTHON_API}/api/bookings`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        providerId: provider.id,
+        provider_id: provider.id,
         name: form.name,
         email: form.email,
-        scheduledAt: `${form.date}T${form.time}:00`,
+        scheduled_at: `${form.date}T${form.time}:00`,
       }),
     })
 
@@ -56,17 +57,16 @@ export default function ProviderProfile({ provider }) {
     setLoading(false)
 
     if (!res.ok) {
-      setError(data.error || 'Unable to create booking.')
+      setError(data.detail || 'Unable to create booking.')
       return
     }
 
-    setStatus(`Booking confirmed for ${new Date(data.booking.scheduledAt).toLocaleString()}`)
+    setStatus(`Booking confirmed for ${new Date(data.scheduled_at).toLocaleString()}`)
     setForm({ name: '', email: '', date: '', time: '10:00' })
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
-      {/* Navbar */}
       <nav className="sticky top-0 z-50 border-b border-white/60 bg-white/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-2">
@@ -80,7 +80,6 @@ export default function ProviderProfile({ provider }) {
       </nav>
 
       <main className="mx-auto max-w-2xl px-6 py-12">
-        {/* Provider card */}
         <div className="card mb-8 flex items-center gap-6">
           <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-3xl bg-gradient-to-br from-indigo-400 to-purple-500 text-4xl font-bold text-white shadow-lg">
             {provider.name[0]}
@@ -94,7 +93,6 @@ export default function ProviderProfile({ provider }) {
           </div>
         </div>
 
-        {/* Booking form */}
         <div className="card">
           <h2 className="mb-1 text-xl font-bold text-gray-900">Book an Appointment</h2>
           <p className="mb-6 text-sm text-gray-500">Fill in your details and pick a time slot.</p>
@@ -115,52 +113,22 @@ export default function ProviderProfile({ provider }) {
           <form onSubmit={handleSubmit} className="space-y-5">
             <label className="block">
               <span className="text-sm font-semibold text-gray-700">Full Name</span>
-              <input
-                type="text"
-                name="name"
-                value={form.name}
-                onChange={handleChange}
-                required
-                placeholder="John Doe"
-                className="input"
-              />
+              <input type="text" name="name" value={form.name} onChange={handleChange} required placeholder="John Doe" className="input" />
             </label>
 
             <label className="block">
               <span className="text-sm font-semibold text-gray-700">Email Address</span>
-              <input
-                type="email"
-                name="email"
-                value={form.email}
-                onChange={handleChange}
-                required
-                placeholder="john@example.com"
-                className="input"
-              />
+              <input type="email" name="email" value={form.email} onChange={handleChange} required placeholder="john@example.com" className="input" />
             </label>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block">
                 <span className="text-sm font-semibold text-gray-700">Date</span>
-                <input
-                  type="date"
-                  name="date"
-                  value={form.date}
-                  onChange={handleChange}
-                  required
-                  className="input"
-                />
+                <input type="date" name="date" value={form.date} onChange={handleChange} required className="input" />
               </label>
               <label className="block">
                 <span className="text-sm font-semibold text-gray-700">Time</span>
-                <input
-                  type="time"
-                  name="time"
-                  value={form.time}
-                  onChange={handleChange}
-                  required
-                  className="input"
-                />
+                <input type="time" name="time" value={form.time} onChange={handleChange} required className="input" />
               </label>
             </div>
 
@@ -185,21 +153,12 @@ export default function ProviderProfile({ provider }) {
 }
 
 export async function getServerSideProps({ params }) {
-  const provider = await prisma.provider.findUnique({
-    where: { id: Number(params.id) },
-    include: { service: true },
-  })
-
-  if (!provider) return { notFound: true }
-
-  return {
-    props: {
-      provider: {
-        id: provider.id,
-        name: provider.name,
-        rating: provider.rating,
-        service: { id: provider.service.id, name: provider.service.name, slug: provider.service.slug },
-      },
-    },
+  try {
+    const res = await fetch(`${PYTHON_API}/api/providers/${params.id}`)
+    if (!res.ok) return { notFound: true }
+    const provider = await res.json()
+    return { props: { provider } }
+  } catch {
+    return { notFound: true }
   }
 }

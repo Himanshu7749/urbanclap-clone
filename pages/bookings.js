@@ -1,16 +1,16 @@
 import Link from 'next/link'
-import prisma from '../lib/prisma'
+
+const PYTHON_API = process.env.PYTHON_API_URL || 'http://localhost:8000'
 
 const statusColors = {
-  PENDING: 'bg-yellow-100 text-yellow-700',
-  CONFIRMED: 'bg-green-100 text-green-700',
-  CANCELLED: 'bg-red-100 text-red-700',
+  pending: 'bg-yellow-100 text-yellow-700',
+  confirmed: 'bg-green-100 text-green-700',
+  cancelled: 'bg-red-100 text-red-700',
 }
 
 export default function Bookings({ bookings }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
-      {/* Navbar */}
       <nav className="sticky top-0 z-50 border-b border-white/60 bg-white/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-2">
@@ -59,7 +59,7 @@ export default function Bookings({ bookings }) {
                     {booking.status}
                   </span>
                   <p className="text-sm text-gray-500">
-                    {new Date(booking.scheduledAt).toLocaleString()}
+                    {new Date(booking.scheduled_at).toLocaleString()}
                   </p>
                 </div>
               </div>
@@ -72,17 +72,12 @@ export default function Bookings({ bookings }) {
 }
 
 export async function getServerSideProps() {
-  const bookings = await prisma.booking.findMany({
-    include: {
-      provider: { include: { service: true } },
-      user: true,
-    },
-    orderBy: { scheduledAt: 'desc' },
-  })
-
-  return {
-    props: {
-      bookings: bookings.map((b) => ({ ...b, scheduledAt: b.scheduledAt.toISOString() })),
-    },
+  try {
+    const res = await fetch(`${PYTHON_API}/api/bookings`)
+    if (!res.ok) return { props: { bookings: [] } }
+    const bookings = await res.json()
+    return { props: { bookings } }
+  } catch {
+    return { props: { bookings: [] } }
   }
 }

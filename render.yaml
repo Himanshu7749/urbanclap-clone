@@ -7,9 +7,6 @@ services:
     dockerfilePath: ./backend/user_service/Dockerfile
     dockerContext: ./backend
     plan: free
-    envVars:
-      - key: DATABASE_URL
-        value: sqlite:////data/users.db
 
   # ── Catalog Service ───────────────────────────────────────────────────────────
   - type: web
@@ -18,9 +15,6 @@ services:
     dockerfilePath: ./backend/catalog_service/Dockerfile
     dockerContext: ./backend
     plan: free
-    envVars:
-      - key: DATABASE_URL
-        value: sqlite:////data/catalog.db
 
   # ── Booking Service ───────────────────────────────────────────────────────────
   - type: web
@@ -30,8 +24,6 @@ services:
     dockerContext: ./backend
     plan: free
     envVars:
-      - key: DATABASE_URL
-        value: sqlite:////data/bookings.db
       - key: USER_SERVICE_URL
         fromService:
           name: urbanserve-user-service
@@ -76,7 +68,9 @@ services:
     plan: free
     envVars:
       - key: FRONTEND_URL
-        sync: false
+        value: https://urbanclap-clone-flax.vercel.app
+      - key: EXTRA_CORS_ORIGINS
+        value: https://urbanclap-clone-flax.vercel.app
       - key: USER_SERVICE_URL
         fromService:
           name: urbanserve-user-service

@@ -1,0 +1,99 @@
+services:
+
+  # ── User Service ─────────────────────────────────────────────────────────────
+  - type: web
+    name: urbanserve-user-service
+    runtime: docker
+    dockerfilePath: ./backend/user_service/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        value: sqlite:////data/users.db
+
+  # ── Catalog Service ───────────────────────────────────────────────────────────
+  - type: web
+    name: urbanserve-catalog-service
+    runtime: docker
+    dockerfilePath: ./backend/catalog_service/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        value: sqlite:////data/catalog.db
+
+  # ── Booking Service ───────────────────────────────────────────────────────────
+  - type: web
+    name: urbanserve-booking-service
+    runtime: docker
+    dockerfilePath: ./backend/booking_service/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        value: sqlite:////data/bookings.db
+      - key: USER_SERVICE_URL
+        fromService:
+          name: urbanserve-user-service
+          type: web
+          property: host
+      - key: CATALOG_SERVICE_URL
+        fromService:
+          name: urbanserve-catalog-service
+          type: web
+          property: host
+      - key: NOTIFICATION_SERVICE_URL
+        fromService:
+          name: urbanserve-notification-service
+          type: web
+          property: host
+
+  # ── Notification Service ──────────────────────────────────────────────────────
+  - type: web
+    name: urbanserve-notification-service
+    runtime: docker
+    dockerfilePath: ./backend/notification_service/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    envVars:
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: FROM_EMAIL
+        value: noreply@urbanserve.com
+
+  # ── API Gateway ───────────────────────────────────────────────────────────────
+  - type: web
+    name: urbanserve-gateway
+    runtime: docker
+    dockerfilePath: ./backend/gateway/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    envVars:
+      - key: FRONTEND_URL
+        sync: false
+      - key: USER_SERVICE_URL
+        fromService:
+          name: urbanserve-user-service
+          type: web
+          property: host
+      - key: CATALOG_SERVICE_URL
+        fromService:
+          name: urbanserve-catalog-service
+          type: web
+          property: host
+      - key: BOOKING_SERVICE_URL
+        fromService:
+          name: urbanserve-booking-service
+          type: web
+          property: host
+      - key: NOTIFICATION_SERVICE_URL
+        fromService:
+          name: urbanserve-notification-service
+          type: web
+          property: host

@@ -1,6 +1,5 @@
 from sqlalchemy.orm import Session
 from models import User
-from schemas import UserCreate
 
 
 class UserRepository:
@@ -12,6 +11,12 @@ class UserRepository:
 
     def get_by_email(self, email: str) -> User | None:
         return self.db.query(User).filter(User.email == email).first()
+
+    def create(self, name: str, email: str, password_hash: str) -> User:
+        user = User(name=name, email=email, password_hash=password_hash)
+        self.db.add(user)
+        self.db.flush()
+        return user
 
     def upsert(self, name: str, email: str) -> User:
         user = self.get_by_email(email)

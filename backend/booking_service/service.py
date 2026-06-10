@@ -4,9 +4,8 @@ from fastapi import HTTPException
 import httpx
 
 from repository import BookingRepository
-from clients import upsert_user, get_provider
+from clients import upsert_user, get_provider, send_booking_confirmation
 from schemas import BookingOut, BookingCreate, UserInfo
-
 
 USER_SERVICE_URL = "http://localhost:8001"
 
@@ -40,6 +39,15 @@ class BookingService:
         )
         self.db.commit()
         self.db.refresh(booking)
+
+        send_booking_confirmation(
+            to_email=user.email,
+            to_name=user.name or user.email,
+            provider_name=provider.name,
+            service_name=provider.service.name,
+            scheduled_at=scheduled_at.strftime("%A, %d %B %Y at %I:%M %p"),
+            booking_id=booking.id,
+        )
 
         return BookingOut(
             id=booking.id,

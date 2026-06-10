@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
-const PYTHON_API = process.env.PYTHON_API_URL || 'http://localhost:8000'
+const PYTHON_API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
 function StarRating({ rating }) {
   const stars = Math.round(rating ?? 0)
@@ -22,6 +22,14 @@ export default function ProviderProfile({ provider }) {
   const [status, setStatus] = useState(null)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    const stored = localStorage.getItem('user')
+    if (stored) {
+      const u = JSON.parse(stored)
+      setForm(f => ({ ...f, name: u.name || '', email: u.email || '' }))
+    }
+  }, [])
 
   if (!provider) {
     return (

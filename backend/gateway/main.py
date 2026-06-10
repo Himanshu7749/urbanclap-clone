@@ -2,7 +2,7 @@ import httpx
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(title="API Gateway", version="1.0.0")
+app = FastAPI(title="API Gateway", version="2.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -11,23 +11,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-USER_SERVICE    = "http://localhost:8001"
-CATALOG_SERVICE = "http://localhost:8002"
-BOOKING_SERVICE = "http://localhost:8003"
+USER_SERVICE         = "http://localhost:8001"
+CATALOG_SERVICE      = "http://localhost:8002"
+BOOKING_SERVICE      = "http://localhost:8003"
+NOTIFICATION_SERVICE = "http://localhost:8004"
 
-# Maps gateway path prefix -> upstream base URL
 ROUTES: dict[str, str] = {
-    "/api/users":     USER_SERVICE,
-    "/api/services":  CATALOG_SERVICE,
-    "/api/providers": CATALOG_SERVICE,
-    "/api/bookings":  BOOKING_SERVICE,
+    "/api/auth":          USER_SERVICE,
+    "/api/users":         USER_SERVICE,
+    "/api/services":      CATALOG_SERVICE,
+    "/api/providers":     CATALOG_SERVICE,
+    "/api/bookings":      BOOKING_SERVICE,
+    "/api/notify":        NOTIFICATION_SERVICE,
 }
 
 
 def _resolve(path: str) -> str | None:
     for prefix, upstream in ROUTES.items():
         if path.startswith(prefix):
-            # Strip /api prefix, keep the rest
             stripped = path[len("/api"):]
             return upstream + stripped
     return None
@@ -71,9 +72,10 @@ async def gateway(path: str, request: Request):
 async def health():
     results = {}
     services = {
-        "user":    f"{USER_SERVICE}/health",
-        "catalog": f"{CATALOG_SERVICE}/health",
-        "booking": f"{BOOKING_SERVICE}/health",
+        "user":         f"{USER_SERVICE}/health",
+        "catalog":      f"{CATALOG_SERVICE}/health",
+        "booking":      f"{BOOKING_SERVICE}/health",
+        "notification": f"{NOTIFICATION_SERVICE}/health",
     }
     async with httpx.AsyncClient(timeout=3.0) as client:
         for name, url in services.items():

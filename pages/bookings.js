@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-const PYTHON_API = process.env.PYTHON_API_URL || 'http://localhost:8000'
+const PYTHON_API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
 const statusColors = {
   pending: 'bg-yellow-100 text-yellow-700',

@@ -66,10 +66,10 @@ start.bat
 
 ### Or start manually (one terminal each)
 ```bash
-cd user_service    && uvicorn main:app --port 8001 --reload
-cd catalog_service && uvicorn main:app --port 8002 --reload
-cd booking_service && uvicorn main:app --port 8003 --reload
-cd gateway         && uvicorn main:app --port 8000 --reload
+cd user_service    && python -m uvicorn main:app --port 8001 --reload
+cd catalog_service && python -m uvicorn main:app --port 8002 --reload
+cd booking_service && python -m uvicorn main:app --port 8003 --reload
+cd gateway         && python -m uvicorn main:app --port 8000 --reload
 ```
 
 ### Then start Next.js

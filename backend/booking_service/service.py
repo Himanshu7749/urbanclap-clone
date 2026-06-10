@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
@@ -7,7 +8,7 @@ from repository import BookingRepository
 from clients import upsert_user, get_provider, send_booking_confirmation
 from schemas import BookingOut, BookingCreate, UserInfo
 
-USER_SERVICE_URL = "http://localhost:8001"
+USER_SERVICE_URL = os.getenv("USER_SERVICE_URL", "http://localhost:8001")
 
 
 class BookingService:

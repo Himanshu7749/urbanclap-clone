@@ -1,0 +1,101 @@
+services:
+
+  # ─── Frontend ───────────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    depends_on:
+      - gateway
+    restart: unless-stopped
+
+  # ─── API Gateway ────────────────────────────────────────────────────────────
+  gateway:
+    build:
+      context: ./backend
+      dockerfile: gateway/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      FRONTEND_URL:            http://localhost:3000
+      USER_SERVICE_URL:        http://user-service:8001
+      CATALOG_SERVICE_URL:     http://catalog-service:8002
+      BOOKING_SERVICE_URL:     http://booking-service:8003
+      NOTIFICATION_SERVICE_URL: http://notification-service:8004
+    depends_on:
+      - user-service
+      - catalog-service
+      - booking-service
+      - notification-service
+    restart: unless-stopped
+
+  # ─── User Service ───────────────────────────────────────────────────────────
+  user-service:
+    build:
+      context: ./backend
+      dockerfile: user_service/Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      DATABASE_URL: sqlite:////data/users.db
+    volumes:
+      - user-data:/data
+    restart: unless-stopped
+
+  # ─── Catalog Service ────────────────────────────────────────────────────────
+  catalog-service:
+    build:
+      context: ./backend
+      dockerfile: catalog_service/Dockerfile
+    ports:
+      - "8002:8002"
+    environment:
+      DATABASE_URL: sqlite:////data/catalog.db
+    volumes:
+      - catalog-data:/data
+    restart: unless-stopped
+
+  # ─── Booking Service ────────────────────────────────────────────────────────
+  booking-service:
+    build:
+      context: ./backend
+      dockerfile: booking_service/Dockerfile
+    ports:
+      - "8003:8003"
+    environment:
+      DATABASE_URL:            sqlite:////data/bookings.db
+      USER_SERVICE_URL:        http://user-service:8001
+      CATALOG_SERVICE_URL:     http://catalog-service:8002
+      NOTIFICATION_SERVICE_URL: http://notification-service:8004
+    volumes:
+      - booking-data:/data
+    depends_on:
+      - user-service
+      - catalog-service
+      - notification-service
+    restart: unless-stopped
+
+  # ─── Notification Service ───────────────────────────────────────────────────
+  notification-service:
+    build:
+      context: ./backend
+      dockerfile: notification_service/Dockerfile
+    ports:
+      - "8004:8004"
+    environment:
+      SMTP_HOST:  ${SMTP_HOST:-sandbox.smtp.mailtrap.io}
+      SMTP_PORT:  ${SMTP_PORT:-2525}
+      SMTP_USER:  ${SMTP_USER:-}
+      SMTP_PASS:  ${SMTP_PASS:-}
+      FROM_EMAIL: ${FROM_EMAIL:-noreply@urbanserve.com}
+    restart: unless-stopped
+
+# ─── Named volumes (data persists across container restarts) ─────────────────
+volumes:
+  user-data:
+  catalog-data:
+  booking-data:

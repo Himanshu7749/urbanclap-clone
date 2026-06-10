@@ -1,10 +1,11 @@
+import os
 import httpx
 from schemas import UserInfo, ProviderInfo
 from fastapi import HTTPException
 
-USER_SERVICE_URL         = "http://localhost:8001"
-CATALOG_SERVICE_URL      = "http://localhost:8002"
-NOTIFICATION_SERVICE_URL = "http://localhost:8004"
+USER_SERVICE_URL         = os.getenv("USER_SERVICE_URL",         "http://localhost:8001")
+CATALOG_SERVICE_URL      = os.getenv("CATALOG_SERVICE_URL",      "http://localhost:8002")
+NOTIFICATION_SERVICE_URL = os.getenv("NOTIFICATION_SERVICE_URL", "http://localhost:8004")
 
 
 def upsert_user(name: str, email: str) -> UserInfo:
@@ -46,7 +47,6 @@ def send_booking_confirmation(
     scheduled_at: str,
     booking_id: int,
 ) -> None:
-    # Fire-and-forget: log on failure but don't block the booking response
     try:
         httpx.post(
             f"{NOTIFICATION_SERVICE_URL}/notify/booking-confirmation",
